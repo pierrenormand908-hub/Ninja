@@ -9,11 +9,11 @@
   <style>
     body { background: #111; height: 100vh; margin: 0; display: flex; justify-content: center; align-items: center; font-family: system-ui, sans-serif; flex-direction: column; }
     
-    .ninja-top { width: 100%; max-width: 380px; margin: 0 auto; height: 360px; background: #050505; border-radius: 5px; box-shadow: 0 10px 30px #000; display: flex; flex-direction: column; overflow: hidden; border: 1px solid #333; position: relative; }
+    .ninja-top { width: 100%; max-width: 380px; margin: 0 auto; height: 380px; background: #050505; border-radius: 5px; box-shadow: 0 10px 30px #000; display: flex; flex-direction: column; overflow: hidden; border: 1px solid #333; position: relative; }
     
     .ninja-logo { width: 100%; text-align: center; font-family: 'Orbitron', sans-serif; font-size: 20px; letter-spacing: 0.25em; text-transform: uppercase; margin: 8px 0 -4px 0; background: linear-gradient(135deg, #f5f5f5 0%, #b0b0b0 30%, #666 60%, #fff 100%); -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: 0 0 4px rgba(255,255,255,0.4), 0 0 10px rgba(0,0,0,0.8), 1px 1px 0 rgba(0,0,0,0.7); position: relative; }
     
-    .ninja-frame { height: 170px; margin: 14px 14px 10px 14px; border-radius: 10px; background: linear-gradient(135deg, #1b1b1b, #050505); border: 1px solid #444; display: flex; padding: 10px 14px; box-sizing: border-box; flex-shrink: 0; }
+    .ninja-frame { height: 190px; margin: 14px 14px 10px 14px; border-radius: 10px; background: linear-gradient(135deg, #1b1b1b, #050505); border: 1px solid #444; display: flex; padding: 10px 14px; box-sizing: border-box; flex-shrink: 0; }
     
     .ninja-display { flex: 1; border-radius: 8px; background: radial-gradient(circle at 50% 0%, #333 0%, #050505 40%, #000 100%); border: 1px solid #222; padding: 10px 12px; box-sizing: border-box; color: #cfcfcf; display: flex; flex-direction: column; justify-content: space-between; }
     
@@ -24,6 +24,9 @@
     .display-right-column { display: flex; flex-direction: column; height: 100%; width: 35%; align-items: flex-end; }
     
     .zone-title { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: #999; font-weight: bold; }
+
+    .zone-mode { font-size: 8px; letter-spacing: 0.04em; text-transform: uppercase; color: #ffcf7a; font-weight: 600; min-height: 10px; line-height: 1.15; margin-top: 1px; word-break: break-word; transition: color 0.2s ease; }
+    .display-right-column .zone-mode { text-align: right; }
     
     .zone-container-top { margin-top: 0; margin-bottom: auto; }
     .zone-container-bottom { margin-top: auto; margin-bottom: 0; }
@@ -99,6 +102,7 @@
         <div class="display-left-column">
           <div class="zone-container-top">
             <div class="zone-title">ZONE 2</div>
+            <div class="zone-mode" id="mode-z2"></div>
             <div class="temp-block">
               <div class="display-temp" id="text-temp-z2"><span id="val-temp-z2">375</span><span class="unit">°F</span></div>
               <div class="temp-arrows"><span id="up-z2">▲</span><span id="down-z2">▼</span></div>
@@ -106,6 +110,7 @@
           </div>
           <div class="zone-container-bottom">
             <div class="zone-title">ZONE 1</div>
+            <div class="zone-mode" id="mode-z1"></div>
             <div class="temp-block">
               <div class="display-temp" id="text-temp-z1"><span id="val-temp-z1">375</span><span class="unit">°F</span></div>
               <div class="temp-arrows"><span id="up-z1">▲</span><span id="down-z1">▼</span></div>
@@ -200,6 +205,46 @@
   let tempZ1 = 375, tempZ2 = 375, tempMega = 375;
   let timeZ1 = 20, timeZ2 = 20;
 
+  // Mode (angle du bouton rotatif) mémorisé séparément pour chaque zone
+  let modeZ1 = null;
+  let modeZ2 = null;
+
+  const MODE_LABELS = {
+    '-55': 'AIR FRY',
+    '-75': 'ROTIR',
+    '-100': 'CUIRE',
+    '-120': 'LEVÉE',
+    '55': 'RÉCHAUFFER',
+    '75': 'DÉSHYDRATER',
+    '100': 'MAINTENIR AU CHAUD'
+  };
+
+  function updateModeLabels() {
+    $('mode-z1').textContent = (modeZ1 !== null && modeZ1 !== undefined) ? (MODE_LABELS[modeZ1] || '') : '';
+    $('mode-z2').textContent = (modeZ2 !== null && modeZ2 !== undefined) ? (MODE_LABELS[modeZ2] || '') : '';
+  }
+
+  function updateKnobDisplay() {
+    const zone1Active = $('z1').classList.contains('active');
+    const zone2Active = $('z2').classList.contains('active');
+    const megaActive = $('mega').classList.contains('active');
+    const knob = $('knobBtn');
+
+    let angle = null;
+    if (megaActive) angle = modeZ1;
+    else if (zone1Active) angle = modeZ1;
+    else if (zone2Active) angle = modeZ2;
+
+    document.querySelectorAll('.knob-option').forEach(opt => opt.classList.remove('active'));
+    if (angle !== null && angle !== undefined) {
+      const match = [...document.querySelectorAll('.knob-option')].find(o => o.getAttribute('data-angle') === String(angle));
+      if (match) match.classList.add('active');
+      knob.style.transform = `rotate(${angle}deg)`;
+    } else {
+      knob.style.transform = 'rotate(0deg)';
+    }
+  }
+
   function updateZoneColors() {
     const zone1Active = $('z1').classList.contains('active');
     const zone2Active = $('z2').classList.contains('active');
@@ -246,8 +291,11 @@
 
   document.querySelectorAll('.section').forEach(el => {
     el.addEventListener('click', () => {
-      el.classList.toggle('active');
+      const wasActive = el.classList.contains('active');
+      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+      if (!wasActive) el.classList.add('active');
       updateZoneColors();
+      updateKnobDisplay();
     });
   });
 
@@ -294,11 +342,28 @@
 
   document.querySelectorAll('.knob-option').forEach(el => {
     el.addEventListener('click', () => {
-      const knob = $('knobBtn');
-      if (el.classList.contains('active')) { el.classList.remove('active'); knob.style.transform = 'rotate(0deg)'; return; }
-      document.querySelectorAll('.knob-option').forEach(opt => opt.classList.remove('active'));
-      el.classList.add('active');
-      knob.style.transform = `rotate(${el.getAttribute('data-angle')}deg)`;
+      const zone1Active = $('z1').classList.contains('active');
+      const zone2Active = $('z2').classList.contains('active');
+      const megaActive = $('mega').classList.contains('active');
+
+      if (!zone1Active && !zone2Active && !megaActive) {
+        alert("Sélectionne d'abord Zone 1, Zone 2 ou Megazone en bas pour choisir un mode.");
+        return;
+      }
+
+      const angle = el.getAttribute('data-angle');
+      const alreadySelected = el.classList.contains('active');
+      const newAngle = alreadySelected ? null : angle;
+
+      if (megaActive) {
+        modeZ1 = newAngle; modeZ2 = newAngle;
+      } else {
+        if (zone1Active) modeZ1 = newAngle;
+        if (zone2Active) modeZ2 = newAngle;
+      }
+
+      updateKnobDisplay();
+      updateModeLabels();
     });
   });
 
@@ -319,14 +384,18 @@
     if (config.zones) config.zones.forEach(id => $(id).classList.add('active'));
     updateZoneColors();
 
-    document.querySelectorAll('.knob-option').forEach(opt => opt.classList.remove('active'));
-    if (config.knobAngle !== undefined && config.knobAngle !== null) {
-      const match = [...document.querySelectorAll('.knob-option')].find(o => o.getAttribute('data-angle') === String(config.knobAngle));
-      if (match) match.classList.add('active');
-      $('knobBtn').style.transform = `rotate(${config.knobAngle}deg)`;
+    // Modes par zone (compatible avec les anciennes recettes qui n'avaient qu'un seul "knobAngle")
+    if (config.modeZ1 !== undefined || config.modeZ2 !== undefined) {
+      modeZ1 = config.modeZ1 !== undefined ? config.modeZ1 : null;
+      modeZ2 = config.modeZ2 !== undefined ? config.modeZ2 : null;
+    } else if (config.knobAngle !== undefined) {
+      modeZ1 = config.knobAngle;
+      modeZ2 = config.knobAngle;
     } else {
-      $('knobBtn').style.transform = 'rotate(0deg)';
+      modeZ1 = null; modeZ2 = null;
     }
+    updateKnobDisplay();
+    updateModeLabels();
 
     disp.textContent = name;
   }
@@ -349,13 +418,13 @@
     if (!name) { alert("Nom de recette requis."); return; }
 
     const activeZones = ['z1', 'z2', 'mega'].filter(id => $(id).classList.contains('active'));
-    const activeKnob = document.querySelector('.knob-option.active');
 
     const config = {
       t1: tempZ1, t2: tempZ2, tm: tempMega,
       ti1: timeZ1, ti2: timeZ2,
       zones: activeZones,
-      knobAngle: activeKnob ? activeKnob.getAttribute('data-angle') : null
+      modeZ1: modeZ1,
+      modeZ2: modeZ2
     };
 
     const isNew = localStorage.getItem(name) === null;
@@ -394,9 +463,10 @@
     ['z1', 'z2', 'mega'].forEach(id => $(id).classList.remove('active'));
     updateZoneColors();
 
-    // Éteindre et remettre le bouton rotatif à sa position d'origine
-    document.querySelectorAll('.knob-option').forEach(opt => opt.classList.remove('active'));
-    $('knobBtn').style.transform = 'rotate(0deg)';
+    // Réinitialiser les modes par zone et le bouton rotatif
+    modeZ1 = null; modeZ2 = null;
+    updateModeLabels();
+    updateKnobDisplay();
 
     $('confirmDeletePopup').style.display = "none";
   });
