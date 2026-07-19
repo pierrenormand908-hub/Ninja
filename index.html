@@ -209,6 +209,9 @@
   let modeZ1 = null;
   let modeZ2 = null;
 
+  // Zone actuellement "ciblée" par le bouton rotatif = la dernière section cliquée
+  let targetZone = null;
+
   const MODE_LABELS = {
     '-55': 'AIR FRY',
     '-75': 'ROTIR',
@@ -225,15 +228,12 @@
   }
 
   function updateKnobDisplay() {
-    const zone1Active = $('z1').classList.contains('active');
-    const zone2Active = $('z2').classList.contains('active');
-    const megaActive = $('mega').classList.contains('active');
     const knob = $('knobBtn');
 
     let angle = null;
-    if (megaActive) angle = modeZ1;
-    else if (zone1Active) angle = modeZ1;
-    else if (zone2Active) angle = modeZ2;
+    if (targetZone === 'mega') angle = modeZ1;
+    else if (targetZone === 'z1') angle = modeZ1;
+    else if (targetZone === 'z2') angle = modeZ2;
 
     document.querySelectorAll('.knob-option').forEach(opt => opt.classList.remove('active'));
     if (angle !== null && angle !== undefined) {
@@ -291,9 +291,17 @@
 
   document.querySelectorAll('.section').forEach(el => {
     el.addEventListener('click', () => {
-      const wasActive = el.classList.contains('active');
-      document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-      if (!wasActive) el.classList.add('active');
+      el.classList.toggle('active');
+
+      // La zone ciblée par le bouton devient celle qu'on vient de cliquer si elle est
+      // maintenant active ; sinon on retombe sur une autre zone encore active, ou aucune.
+      if (el.classList.contains('active')) {
+        targetZone = el.id;
+      } else {
+        const stillActive = document.querySelector('.section.active');
+        targetZone = stillActive ? stillActive.id : null;
+      }
+
       updateZoneColors();
       updateKnobDisplay();
     });
@@ -342,11 +350,7 @@
 
   document.querySelectorAll('.knob-option').forEach(el => {
     el.addEventListener('click', () => {
-      const zone1Active = $('z1').classList.contains('active');
-      const zone2Active = $('z2').classList.contains('active');
-      const megaActive = $('mega').classList.contains('active');
-
-      if (!zone1Active && !zone2Active && !megaActive) {
+      if (!targetZone) {
         alert("Sélectionne d'abord Zone 1, Zone 2 ou Megazone en bas pour choisir un mode.");
         return;
       }
@@ -355,11 +359,12 @@
       const alreadySelected = el.classList.contains('active');
       const newAngle = alreadySelected ? null : angle;
 
-      if (megaActive) {
+      if (targetZone === 'mega') {
         modeZ1 = newAngle; modeZ2 = newAngle;
-      } else {
-        if (zone1Active) modeZ1 = newAngle;
-        if (zone2Active) modeZ2 = newAngle;
+      } else if (targetZone === 'z1') {
+        modeZ1 = newAngle;
+      } else if (targetZone === 'z2') {
+        modeZ2 = newAngle;
       }
 
       updateKnobDisplay();
@@ -382,6 +387,7 @@
 
     ['z1', 'z2', 'mega'].forEach(id => $(id).classList.remove('active'));
     if (config.zones) config.zones.forEach(id => $(id).classList.add('active'));
+    targetZone = (config.zones && config.zones.length) ? config.zones[config.zones.length - 1] : null;
     updateZoneColors();
 
     // Modes par zone (compatible avec les anciennes recettes qui n'avaient qu'un seul "knobAngle")
@@ -461,6 +467,7 @@
 
     // Éteindre les zones actives
     ['z1', 'z2', 'mega'].forEach(id => $(id).classList.remove('active'));
+    targetZone = null;
     updateZoneColors();
 
     // Réinitialiser les modes par zone et le bouton rotatif
