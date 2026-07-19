@@ -120,6 +120,7 @@
         
         <div class="display-center-column">
           <div class="zone-title">megazone™</div>
+          <div class="zone-mode" id="mode-mega"></div>
           <div class="temp-block-vertical">
             <div class="single-arrow" id="up-mega" style="color: #444;">▲</div>
             <div class="display-temp" id="text-temp-mega"><span id="val-temp-mega">375</span><span class="unit">°F</span></div>
@@ -208,6 +209,7 @@
   // Mode (angle du bouton rotatif) mémorisé séparément pour chaque zone
   let modeZ1 = null;
   let modeZ2 = null;
+  let modeMega = null;
 
   // Zone actuellement "ciblée" par le bouton rotatif = la dernière section cliquée
   let targetZone = null;
@@ -223,15 +225,17 @@
   };
 
   function updateModeLabels() {
-    $('mode-z1').textContent = (modeZ1 !== null && modeZ1 !== undefined) ? (MODE_LABELS[modeZ1] || '') : '';
-    $('mode-z2').textContent = (modeZ2 !== null && modeZ2 !== undefined) ? (MODE_LABELS[modeZ2] || '') : '';
+    const megaActive = $('mega').classList.contains('active');
+    $('mode-z1').textContent = (!megaActive && modeZ1 !== null && modeZ1 !== undefined) ? (MODE_LABELS[modeZ1] || '') : '';
+    $('mode-z2').textContent = (!megaActive && modeZ2 !== null && modeZ2 !== undefined) ? (MODE_LABELS[modeZ2] || '') : '';
+    $('mode-mega').textContent = (modeMega !== null && modeMega !== undefined) ? (MODE_LABELS[modeMega] || '') : '';
   }
 
   function updateKnobDisplay() {
     const knob = $('knobBtn');
 
     let angle = null;
-    if (targetZone === 'mega') angle = modeZ1;
+    if (targetZone === 'mega') angle = modeMega;
     else if (targetZone === 'z1') angle = modeZ1;
     else if (targetZone === 'z2') angle = modeZ2;
 
@@ -304,6 +308,7 @@
 
       updateZoneColors();
       updateKnobDisplay();
+      updateModeLabels();
     });
   });
 
@@ -360,7 +365,7 @@
       const newAngle = alreadySelected ? null : angle;
 
       if (targetZone === 'mega') {
-        modeZ1 = newAngle; modeZ2 = newAngle;
+        modeMega = newAngle;
       } else if (targetZone === 'z1') {
         modeZ1 = newAngle;
       } else if (targetZone === 'z2') {
@@ -391,14 +396,16 @@
     updateZoneColors();
 
     // Modes par zone (compatible avec les anciennes recettes qui n'avaient qu'un seul "knobAngle")
-    if (config.modeZ1 !== undefined || config.modeZ2 !== undefined) {
+    if (config.modeZ1 !== undefined || config.modeZ2 !== undefined || config.modeMega !== undefined) {
       modeZ1 = config.modeZ1 !== undefined ? config.modeZ1 : null;
       modeZ2 = config.modeZ2 !== undefined ? config.modeZ2 : null;
+      modeMega = config.modeMega !== undefined ? config.modeMega : null;
     } else if (config.knobAngle !== undefined) {
       modeZ1 = config.knobAngle;
       modeZ2 = config.knobAngle;
+      modeMega = config.knobAngle;
     } else {
-      modeZ1 = null; modeZ2 = null;
+      modeZ1 = null; modeZ2 = null; modeMega = null;
     }
     updateKnobDisplay();
     updateModeLabels();
@@ -430,7 +437,8 @@
       ti1: timeZ1, ti2: timeZ2,
       zones: activeZones,
       modeZ1: modeZ1,
-      modeZ2: modeZ2
+      modeZ2: modeZ2,
+      modeMega: modeMega
     };
 
     const isNew = localStorage.getItem(name) === null;
@@ -471,7 +479,7 @@
     updateZoneColors();
 
     // Réinitialiser les modes par zone et le bouton rotatif
-    modeZ1 = null; modeZ2 = null;
+    modeZ1 = null; modeZ2 = null; modeMega = null;
     updateModeLabels();
     updateKnobDisplay();
 
