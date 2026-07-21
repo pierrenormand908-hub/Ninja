@@ -426,6 +426,18 @@
     return li;
   }
 
+  // Insère une recette dans la liste en respectant l'ordre alphabétique
+  function insertRecipeSorted(name) {
+    const li = makeLi(name);
+    const items = [...$('recipeList').children];
+    const nextItem = items.find(item => item.textContent.localeCompare(name, 'fr', { sensitivity: 'base' }) > 0);
+    if (nextItem) {
+      $('recipeList').insertBefore(li, nextItem);
+    } else {
+      $('recipeList').appendChild(li);
+    }
+  }
+
   $('confirmSave').addEventListener('click', () => {
     const name = $('recipeName').value.trim();
     if (!name) { alert("Nom de recette requis."); return; }
@@ -448,7 +460,7 @@
     $('recipeName').value = "";
 
     if (isNew) {
-      $('recipeList').appendChild(makeLi(name));
+      insertRecipeSorted(name);
     }
 
     disp.textContent = "Enregistré : " + name;
@@ -487,12 +499,14 @@
   });
   $('noDelete').addEventListener('click', () => $('confirmDeletePopup').style.display = "none");
 
-  // Chargement des recettes déjà enregistrées au démarrage
+  // Chargement des recettes déjà enregistrées au démarrage, triées par ordre alphabétique
   const liste = $('recipeList');
+  const nomsRecettes = [];
   for (let i = 0; i < localStorage.length; i++) {
-    const nom = localStorage.key(i);
-    liste.appendChild(makeLi(nom));
+    nomsRecettes.push(localStorage.key(i));
   }
+  nomsRecettes.sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
+  nomsRecettes.forEach(nom => liste.appendChild(makeLi(nom)));
 </script>
 
 </body>
